@@ -1,0 +1,56 @@
+[
+  {
+    "scene": "s0_intro",
+    "file": "/app/demo/audio/s0_intro.mp3",
+    "seconds": 20.57,
+    "text": "Software gets built in a dozen places \u2014 Slack, GitHub, ChatGPT \u2014 and the truth about whether it actually works lives in the browser. ShadowQA connects all of it into one loop: understand, plan, build, observe, fix, verify."
+  },
+  {
+    "scene": "s1_runtime",
+    "file": "/app/demo/audio/s1_runtime.mp3",
+    "seconds": 16.15,
+    "text": "This is the ShadowQA Command Center, embedded in Lumen Supply, a real e-commerce app. Every incident here was observed, diagnosed, patched \u2014 and proved, by replaying the user's exact session."
+  },
+  {
+    "scene": "s2_context",
+    "file": "/app/demo/audio/s2_context.mp3",
+    "seconds": 17.71,
+    "text": "Development Context. ShadowQA is live in the team's Slack, watching the GitHub repo \u2014 issues, pull requests, reviews, CI \u2014 and a developer can track a ChatGPT or Claude conversation. Let's paste one."
+  },
+  {
+    "scene": "s3_knowledge",
+    "file": "/app/demo/audio/s3_knowledge.mp3",
+    "seconds": 13.01,
+    "text": "Gemini extracts the durable knowledge \u2014 decisions, requirements, constraints \u2014 each linked to the exact message it came from. Nothing is invented. The developer confirms what's true."
+  },
+  {
+    "scene": "s4_plan",
+    "file": "/app/demo/audio/s4_plan.mp3",
+    "seconds": 22.1,
+    "text": "Now, an objective. Gemini combines the confirmed requirements with a live inspection of the codebase and compiles a plan: small tasks, exact files, acceptance criteria, risk. It's low risk and the project is in auto-fix mode \u2014 so ShadowQA's own coding agent starts building."
+  },
+  {
+    "scene": "s5_build",
+    "file": "/app/demo/audio/s5_build.mp3",
+    "seconds": 21.82,
+    "text": "Each task becomes a precise patch, applied and validated \u2014 Babel, ESLint, Jest. If a check fails, the workspace is restored and the agent repairs its work. The result: a diff, green checks, a git branch \u2014 or a brief you can hand straight to Claude Code."
+  },
+  {
+    "scene": "s6_runtime_fix",
+    "file": "/app/demo/audio/s6_runtime_fix.mp3",
+    "seconds": 33.91,
+    "text": "Then, the part no chatbot can do. In the running app, a customer opens Help \u2014 and the tickets request fails with a 500. No JavaScript error; the page degrades gracefully. But ShadowQA saw the click, the request, and \u2014 from inside the backend \u2014 the failing handler. It patches the Python, validates, restarts the bridge, and replays the same navigation to prove the list renders."
+  },
+  {
+    "scene": "s7_verified",
+    "file": "/app/demo/audio/s7_verified.mp3",
+    "seconds": 16.92,
+    "text": "Fix verified, end to end, in under thirty seconds \u2014 and nobody typed a prompt. The project graph shows the whole chain: decision, requirement, plan, code, runtime incident, verification. And the team hears about it in Slack."
+  },
+  {
+    "scene": "s8_outro",
+    "file": "/app/demo/audio/s8_outro.mp3",
+    "seconds": 9.12,
+    "text": "ShadowQA. From conversation to code. From code to runtime. From runtime to verified results."
+  }
+]
