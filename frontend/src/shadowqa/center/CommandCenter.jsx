@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useCenterData } from "./useCenterData";
 import { CenterHeader } from "./CenterHeader";
 import { LoopPanel } from "./LoopPanel";
@@ -7,7 +7,16 @@ import { WhyPanel } from "./WhyPanel";
 import { IncidentTable, ScenarioPanel } from "./IncidentTable";
 import { HealthPanel, MemoryPanel } from "./HealthPanel";
 import { AgentPanel, ContextPanel } from "./AgentPanel";
+import { ContextView } from "./core/ContextView";
+import { GraphView } from "./core/GraphView";
+import { useCoreData } from "./core/useCoreData";
 import { Stat, ms } from "./ui";
+
+const VIEWS = [
+  ["runtime", "Runtime loop", "observe · fix · replay"],
+  ["context", "Development context", "Slack · GitHub · plans"],
+  ["graph", "Project graph", "decision → verification"],
+];
 
 const STYLE = `
 .cc-root { background-color: #0b0c0f; background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 32px 32px; }
@@ -20,6 +29,9 @@ const STYLE = `
 export default function CommandCenter() {
   const data = useCenterData(4000);
   const { bridge, refresh, health, telemetry, incidents, qaRun, memory, settings, scenarios, flows, audit, loading, error } = data;
+  const [params, setParams] = useSearchParams();
+  const view = VIEWS.some(([id]) => id === params.get("view")) ? params.get("view") : "runtime";
+  const core = useCoreData(bridge, 4000, view !== "runtime");
   const [notice, setNotice] = useState(null);
   const [resetting, setResetting] = useState(false);
 
@@ -28,6 +40,22 @@ export default function CommandCenter() {
     document.title = "ShadowQA · Command Center";
     return () => (document.title = prev);
   }, []);
+
+  useEffect(() => {
+    const id = params.get("incident");
+    if (!id || !window.__shadowqa) return;
+    bridge.getIncident(id).then((inc) => {
+      window.__shadowqa.overlay.set({ incident: inc, inspector: true, tab: "timeline" });
+      window.__shadowqa.loadInspectorData("timeline");
+    }).catch(() => {});
+  }, [params, bridge]);
+
+  const setView = (id) => {
+    const next = new URLSearchParams(params);
+    next.set("view", id);
+    next.delete("incident");
+    setParams(next, { replace: true });
+  };
 
   const say = (text) => {
     setNotice(text);
@@ -74,12 +102,12 @@ export default function CommandCenter() {
       <main className="mx-auto max-w-[1440px] px-6 lg:px-10 py-10 grid gap-6">
         <section className="grid lg:grid-cols-[1.15fr_1fr] gap-8 items-end cc-rise">
           <div>
-            <div className="text-[10.5px] uppercase tracking-[0.16em] text-[#37b6d3] font-mono mb-3">Zero-UI debugging & QA agent · embedded in {health?.workspace || "the application"}</div>
+            <div className="text-[10.5px] uppercase tracking-[0.16em] text-[#37b6d3] font-mono mb-3">Development context + execution context · one agent · embedded in {health?.workspace || "the application"}</div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-[-0.03em] leading-[1.02]">
-              Agents are leaving <span className="text-[#98a3b3] font-light italic">the chatbox.</span>
+              From conversation <span className="text-[#98a3b3] font-light italic">to verified code.</span>
             </h1>
             <p className="mt-5 max-w-2xl text-[14px] leading-relaxed text-[#98a3b3]">
-              ShadowQA lives inside the running app. It sees the click, the request, the exception and the source — then diagnoses, patches, validates and <em className="text-[#eef2f6] not-italic">replays your exact failure</em> to prove the fix. This page is its memory; the store is where it works.
+              ShadowQA reads what the team decided in Slack, GitHub and AI chats, turns it into plans, builds them with its coding agent, then lives inside the running app: it sees the click, the request, the exception and the source — diagnoses, patches, validates and <em className="text-[#eef2f6] not-italic">replays your exact failure</em> to prove the fix. Every fix links back to the requirement it came from.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               <Link to="/" className="inline-flex items-center gap-2 rounded-md bg-[#eef2f6] text-[#0b0c0f] px-4 py-2 text-[12.5px] font-medium hover:bg-white transition-colors" data-testid="cc-open-store-btn">Open Lumen Supply Co. →</Link>
@@ -96,6 +124,19 @@ export default function CommandCenter() {
           </div>
         </section>
 
+        <nav className="flex flex-wrap gap-1 rounded-lg border border-white/[0.08] bg-[#0f1115] p-1 cc-rise cc-d1 w-fit" role="tablist" data-testid="cc-views">
+          {VIEWS.map(([id, label, hint]) => (
+            <button key={id} type="button" role="tab" aria-selected={view === id} onClick={() => setView(id)}
+              className={`text-left rounded-md px-3.5 py-2 transition-[background-color,color] duration-150 ${view === id ? "bg-[#eef2f6] text-[#0b0c0f]" : "text-[#98a3b3] hover:text-[#eef2f6] hover:bg-[#12151a]"}`} data-testid={`cc-view-${id}`}>
+              <div className="text-[12.5px] font-semibold">{label}</div>
+              <div className={`text-[10px] font-mono ${view === id ? "text-[#0b0c0f]/70" : "text-[#667081]"}`}>{hint}</div>
+            </button>
+          ))}
+        </nav>
+
+        {view === "context" && <div className="cc-rise cc-d2"><ContextView bridge={bridge} core={core} say={say} initialPlan={params.get("plan")} refreshRuntime={refresh} /></div>}
+        {view === "graph" && <div className="cc-rise cc-d2"><GraphView graph={core.graph} /></div>}
+        {view === "runtime" && <>
         <div className="cc-rise cc-d1"><LoopPanel incidents={list} /></div>
         <div className="cc-rise cc-d1"><WhyPanel incidents={list} /></div>
 
@@ -111,6 +152,7 @@ export default function CommandCenter() {
           <AgentPanel telemetry={telemetry} audit={audit} settings={settings} />
           <MemoryPanel memory={memory} />
         </div>
+        </>}
         <footer className="pt-6 pb-2 flex flex-wrap items-center justify-between gap-3 text-[11px] text-[#667081] font-mono cc-rise cc-d5">
           <span>ShadowQA · bridge {health ? "online" : error ? "offline" : "…"} · {health?.root}</span>
           <span>write roots: {(health?.write_roots || []).join(", ") || "—"}</span>

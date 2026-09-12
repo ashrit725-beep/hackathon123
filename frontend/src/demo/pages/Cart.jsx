@@ -82,6 +82,7 @@ export default function Cart() {
               <Link to="/checkout" className="btn-ink w-full mt-6" data-testid="cart-checkout-btn">Proceed to checkout</Link>
               <p className="mt-3 text-[11px] text-mute font-mono">Free shipping on orders over $300.</p>
             </div>
+            <Link to="/products" className="block mt-4 text-sm text-mute text-center hover:text-ink" data-testid="cart-continue-shopping">Continue shopping</Link>
           </aside>
         </div>
       )}

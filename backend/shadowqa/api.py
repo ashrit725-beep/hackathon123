@@ -97,6 +97,8 @@ async def apply_fix(incident_id: str, x_shadowqa_token: str | None = Header(defa
         raise HTTPException(status_code=404, detail="incident not found")
     if inc.get("status") != "diagnosed":
         raise HTTPException(status_code=409, detail=f"cannot apply in status {inc.get('status')}")
+    if settings.observe_only:
+        raise HTTPException(status_code=409, detail="project is in observe mode — ShadowQA diagnoses but never writes")
     await audit("developer.approved_fix", incident_id, actor="developer")
     asyncio.create_task(pipeline.run_apply(incident_id, actor="developer"))
     return {"ok": True}
@@ -236,7 +238,7 @@ class SettingsUpdate(BaseModel):
 @router.get("/settings")
 async def read_settings(x_shadowqa_token: str | None = Header(default=None)):
     require_token(x_shadowqa_token)
-    return {"autonomy": settings.autonomy, "policies": ["approve_all", "auto_low"], "models": settings.models}
+    return {"autonomy": settings.autonomy, "mode": settings.mode, "policies": ["approve_all", "auto_low"], "models": settings.models}
 
 
 @router.put("/settings")
@@ -244,9 +246,9 @@ async def write_settings(body: SettingsUpdate, x_shadowqa_token: str | None = He
     require_token(x_shadowqa_token)
     if body.autonomy not in ("approve_all", "auto_low"):
         raise HTTPException(status_code=400, detail="autonomy must be approve_all or auto_low")
-    settings.autonomy = body.autonomy
-    await audit("policy.changed", actor="developer", autonomy=body.autonomy)
-    return {"autonomy": settings.autonomy}
+    settings.set_autonomy(body.autonomy)
+    await audit("policy.changed", actor="developer", autonomy=body.autonomy, mode=settings.mode)
+    return {"autonomy": settings.autonomy, "mode": settings.mode}
 
 
 @router.get("/demo/scenarios")

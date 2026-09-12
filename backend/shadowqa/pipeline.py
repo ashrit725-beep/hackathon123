@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 from . import correlation, git_ops, memory, orchestrator, risk, server_sdk
 from .config import settings
+from .core import hooks
 from .db import audit, get_incident, incidents, now_iso, now_ms, update_incident
 from .llm import LLMUnavailable
 from .patching import apply_files, plan_patch, restore_files
@@ -152,7 +153,10 @@ async def run_diagnosis(incident_id: str) -> None:
     if plan and settings.autonomy == "auto_low" and fields["risk"]["autonomous_eligible"] and inc.get("source") != "qa":
         await update_incident(incident_id, {"policy.auto_applied": True})
         await audit("policy.autonomous_apply", incident_id, risk="LOW", confidence=diagnosis["confidence"])
+        asyncio.create_task(hooks.incident_event(incident_id, "diagnosed"))
         await run_apply(incident_id, actor="policy:auto_low")
+    else:
+        asyncio.create_task(hooks.incident_event(incident_id, fields["status"]))
 
 
 async def run_apply(incident_id: str, actor: str = "developer") -> None:
@@ -238,6 +242,7 @@ async def record_replay(incident_id: str, result: dict) -> dict | None:
         await update_incident(incident_id, {"replay": replay, "status": "verified", "verified_at": now_iso(), "telemetry": telemetry})
         await memory.record_fix({**inc, "replay": replay}, verified=True)
         await audit("replay.verified", incident_id, actor="sdk", evidence=[e.get("label") for e in result.get("evidence", [])][:12])
+        asyncio.create_task(hooks.incident_event(incident_id, "verified"))
     else:
         if inc.get("checkpoint"):
             restore_files(ws, inc["checkpoint"]["files"])

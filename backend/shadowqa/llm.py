@@ -15,9 +15,9 @@ class LLMUnavailable(Exception):
     pass
 
 
-def _providers() -> list[tuple[str, str]]:
+def _providers(chain: list[str] | None = None) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
-    for spec in settings.model_chain:
+    for spec in (chain or settings.model_chain):
         if spec and ":" in spec:
             provider, model = spec.split(":", 1)
             if settings.key_for(provider):
@@ -26,11 +26,11 @@ def _providers() -> list[tuple[str, str]]:
 
 
 def _llmchat_session(provider: str, model: str, system: str, max_tokens: int):
-    """Anthropic / OpenAI through emergentintegrations with the user's own provider key."""
+    """Anthropic / OpenAI / Gemini through emergentintegrations with the user's own provider key."""
     chat = LlmChat(api_key=settings.key_for(provider), session_id=f"sqa-{uuid.uuid4()}", system_message=system)
     params = {"max_tokens": max_tokens}
-    if not (provider == "openai" and model.startswith("gpt-5")):
-        params["temperature"] = 0.1  # gpt-5 family accepts only the default temperature
+    if provider == "anthropic":
+        params["temperature"] = 0.1  # gpt-5 family and Gemini thinking models accept only their default temperature
     chat.with_model(provider, model).with_params(**params)
 
     async def send(text: str) -> str:
@@ -120,9 +120,10 @@ def extract_json(text: str) -> dict:
 REPAIR_NOTE = "Your previous reply could not be parsed as JSON ({error}). Reply again with ONLY the JSON object — no prose, no markdown fences."
 
 
-async def complete_json(system: str, user: str, purpose: str, incident_id: str | None = None, max_tokens: int = 7000) -> tuple[dict, dict]:
+async def complete_json(system: str, user: str, purpose: str, incident_id: str | None = None, max_tokens: int = 7000,
+                        chain: list[str] | None = None) -> tuple[dict, dict]:
     errors: list[str] = []
-    for provider, model in _providers():
+    for provider, model in _providers(chain):
         started = time.time()
         try:
             send = _session(provider, model, system, max_tokens)

@@ -11,11 +11,14 @@ def test_provider_chain_follows_settings_and_keys(monkeypatch):
     monkeypatch.setattr(settings, "openai_key", "o")
     monkeypatch.setattr(settings, "kimi_key", "k")
     monkeypatch.setattr(settings, "emergent_key", "")
-    assert llm._providers() == [("anthropic", "claude-sonnet-4-6"), ("openai", "gpt-5.4"), ("kimi", "kimi-k2.7-code-highspeed")]
-    assert settings.models == {"primary": "anthropic:claude-sonnet-4-6", "fallback": "openai:gpt-5.4", "tertiary": "kimi:kimi-k2.7-code-highspeed"}
+    monkeypatch.setattr(settings, "planning_model", "gemini:gemini-3.6-flash")
+    monkeypatch.setattr(settings, "gemini_key", "g")
+    assert llm._providers() == [("anthropic", "claude-sonnet-4-6"), ("openai", "gpt-5.4"), ("kimi", "kimi-k2.7-code-highspeed"), ("gemini", "gemini-3.6-flash")]
+    assert llm._providers(settings.planning_chain)[0] == ("gemini", "gemini-3.6-flash"), "planning runs on Gemini first"
+    assert settings.models == {"primary": "anthropic:claude-sonnet-4-6", "fallback": "openai:gpt-5.4", "tertiary": "kimi:kimi-k2.7-code-highspeed", "planning": "gemini:gemini-3.6-flash"}
 
     monkeypatch.setattr(settings, "kimi_key", "")
-    assert [p for p, _ in llm._providers()] == ["anthropic", "openai"], "a provider without a key is skipped, never called"
+    assert [p for p, _ in llm._providers()] == ["anthropic", "openai", "gemini"], "a provider without a key is skipped, never called"
     monkeypatch.setattr(settings, "tertiary_model", "")
     assert settings.models["tertiary"] is None
 

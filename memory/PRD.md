@@ -41,7 +41,14 @@ Reset: `POST /api/shadowqa/demo/reset`, Command Center button, or `scripts/reset
 - QA sweep from Command Center: 13 flows, failures queued for review, Investigate → View Fix → Apply → verified.
 - Backend 38/38 pytest, Jest 7/7. Docs (README, DEMO, ARCHITECTURE) updated with positioning + third bug + Command Center.
 
-## Backlog
+## Implemented (2026-06, merge of the ShadowQA context layer — `backend/shadowqa/core/`, `frontend/src/shadowqa/center/core/`)
+- Sources: Slack Socket Mode connector (`core/slack.py`, bot "hackathon" in Horizon STEM; reads channels it is invited to, `@ShadowQA plan|status|sync|help`, posts incident/plan notices with Command Center links), GitHub poller (`core/github.py`, BlueBrik1/shadowqa: issues/PRs/reviews/comments/checks/commits), pasted ChatGPT/Claude/Claude Code/Codex conversations (`POST /api/shadowqa/core/sources/import`).
+- Knowledge (`core/context.py`, Gemini 3.6 Flash): decisions/requirements/constraints/bugs/questions with provenance, dedupe, confirm/reject/edit (human edits never overwritten).
+- Plans (`core/planner.py`, Gemini): objective + confirmed knowledge + workspace grep/excerpts → tasks (files, acceptance, risk), unknowns, verification; auto-approved under auto-fix/full-auto when LOW risk. Brief export (markdown) for Claude Code / Codex.
+- Execution (`core/executor.py`, Claude→GPT→Kimi→Gemini chain): task-by-task hunks → checkpoint → validation (Babel/ESLint/Jest or py_compile/pyflakes) → one repair round → plan lands whole or rolls back; git branch `shadowqa/plan-<id>`; PR in full-auto with GITHUB_REPO. Verified live: "Continue shopping" link plan built in 11 s.
+- Modes observe/approval/auto-fix/full-auto (`settings.mode` ↔ Live autonomy), `PUT /core/mode`; observe blocks apply/execute. Hooks link runtime incidents to plans/requirements and notify Slack. Graph (`core/graph.py`) decision → plan → file → incident → verification; activity feed.
+- Command Center tabs: Runtime loop · Development context (`?view=context&plan=<id>`) · Project graph. NOT DONE: automated test run of the new UI (time-boxed by user); demo video could not be rendered in this environment (no ffmpeg/browser recorder).
+
 - P1: "before fix" reproduction replay (prove the failure reproduces prior to patching) as extra evidence.
 - P1: per-tab session isolation for concurrent tabs; TypeScript typecheck validator; pytest related tests for backend patches.
 - P2: `GET /api/shadowqa/server-errors` + inspector tab for the server observer; multi-incident queue UI; scheduled regression alerts; Slack/GitHub notifications; extension icons/store packaging; set `GITHUB_REPO` for real PRs.
@@ -50,3 +57,5 @@ Reset: `POST /api/shadowqa/demo/reset`, Command Center button, or `scripts/reset
 ## Next tasks
 1. Optional: provide GitHub repo → validate real PR flow.
 2. Testing-agent regression pass after any SDK/overlay change (reset demo at the end).
+
+## Backlog

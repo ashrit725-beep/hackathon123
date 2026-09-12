@@ -40,4 +40,25 @@ export class Bridge {
   putSettings = (body) => this.call("PUT", "/settings", body);
   getScenarios = () => this.call("GET", "/demo/scenarios");
   resetDemo = () => this.call("POST", "/demo/reset");
+
+  // Development-context layer (ShadowQA Core)
+  coreOverview = () => this.call("GET", "/core/overview");
+  putMode = (mode) => this.call("PUT", "/core/mode", { mode });
+  listSources = (limit = 40) => this.call("GET", `/core/sources?limit=${limit}`);
+  importSource = (body) => this.call("POST", "/core/sources/import", body);
+  syncGithub = () => this.call("POST", "/core/connectors/github/sync");
+  testSlack = () => this.call("POST", "/core/connectors/slack/test");
+  listKnowledge = () => this.call("GET", "/core/knowledge?limit=120");
+  extractKnowledge = () => this.call("POST", "/core/knowledge/extract");
+  updateKnowledge = (id, body) => this.call("PUT", `/core/knowledge/${id}`, body);
+  listPlans = () => this.call("GET", "/core/plans?limit=30");
+  getPlan = (id) => this.call("GET", `/core/plans/${id}`);
+  compilePlan = (objective) => this.call("POST", "/core/plans", { objective });
+  approvePlan = (id) => this.call("POST", `/core/plans/${id}/approve`);
+  rejectPlan = (id) => this.call("POST", `/core/plans/${id}/reject`);
+  rollbackPlan = (id) => this.call("POST", `/core/plans/${id}/rollback`);
+  verifyPlan = (id, body = {}) => this.call("POST", `/core/plans/${id}/verify`, body);
+  planBrief = (id) => this.call("GET", `/core/plans/${id}/brief`);
+  coreGraph = () => this.call("GET", "/core/graph");
+  coreActivity = (limit = 40) => this.call("GET", `/core/activity?limit=${limit}`);
 }
