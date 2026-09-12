@@ -20,7 +20,7 @@
 │ correlation.py    causal timeline · context graph · replay plan · fingerprint       │
 │ retrieval.py      targeted source retrieval (frames, route handler, component…)     │
 │ orchestrator.py   structured agent loop (understand/diagnose/retrieve/plan/generate)│
-│ llm.py            provider fallback (Claude → GPT), strict JSON extraction           │
+│ llm.py            provider fallback (Claude → GPT → Kimi), strict JSON extraction    │
 │ patching.py       exact search/replace hunks → unified diff, limits, dry-run        │
 │ risk.py           explainable LOW/MEDIUM/HIGH + autonomy eligibility               │
 │ validation.py     allow-listed argv: Babel parse · ESLint · Jest related · pyflakes │
@@ -82,7 +82,7 @@ Never the whole repository. In order: the primary frame's file, other applicatio
 
 ## 7. AI orchestrator
 
-A bounded agent loop (≤ 3 rounds): the system prompt fixes the order *understand → diagnose → retrieve → plan → generate → assess → verification* and the JSON schema. Untrusted application content is wrapped in `<untrusted>` blocks. If a returned hunk does not apply verbatim, the failure reason is fed back for one repair round. Models reason before answering and fence their JSON: `extract_json` accepts prose + fenced blocks and picks the balanced object that parses; an unparseable reply gets one in-conversation repair turn with the same provider before falling back. Provider fallback: `anthropic:claude-sonnet-4-6` → `openai:gpt-5.4` (GPT-5 family receives no temperature override). Every call is logged (`sqa_llm_log`).
+A bounded agent loop (≤ 3 rounds): the system prompt fixes the order *understand → diagnose → retrieve → plan → generate → assess → verification* and the JSON schema. Untrusted application content is wrapped in `<untrusted>` blocks. If a returned hunk does not apply verbatim, the failure reason is fed back for one repair round. Models reason before answering and fence their JSON: `extract_json` accepts prose + fenced blocks and picks the balanced object that parses; an unparseable reply gets one in-conversation repair turn with the same provider before falling back. Provider fallback: `anthropic:claude-sonnet-4-6` → `openai:gpt-5.4` (GPT-5 family receives no temperature override) → `kimi:kimi-k2.7-code-highspeed` (Moonshot's OpenAI-compatible endpoint via the `openai` SDK; thinking model, so no temperature and ≥ 16k output headroom, `reasoning_content` echoed back on the repair turn). Every call is logged (`sqa_llm_log`).
 
 ## 8. Patch, risk, validation, rollback
 

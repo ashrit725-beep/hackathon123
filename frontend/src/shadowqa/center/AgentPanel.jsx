@@ -8,7 +8,7 @@ export function AgentPanel({ telemetry, audit, settings }) {
     <Panel eyebrow="Agent" title="Latency, models & audit trail" testid="cc-agent">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" data-testid="cc-stage-latency">
         {STAGES.map(([k, l]) => <Stat key={k} label={l} value={ms(a[k])} testid={`cc-latency-${k}`} />)}
-        <Stat label="primary model" value={<span className="text-[12px] break-all">{settings?.models?.primary || telemetry?.models?.primary || "—"}</span>} />
+        <Stat label="model chain" testid="cc-model-chain" value={<span className="text-[12px] break-all" title={[settings?.models?.fallback, settings?.models?.tertiary].filter(Boolean).join(" → ")}>{settings?.models?.primary || telemetry?.models?.primary || "—"}{settings?.models?.fallback ? <span className="text-[#667081]"> → {[settings.models.fallback, settings.models.tertiary].filter(Boolean).map((m) => m.split(":")[0]).join(" → ")}</span> : null}</span>} />
       </div>
       <div className="grid md:grid-cols-2 gap-4">
         <div>

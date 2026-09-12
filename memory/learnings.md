@@ -13,3 +13,4 @@
 - A backend patch triggers `uvicorn --reload`; validation (py_compile+pyflakes ≈130 ms) usually finishes before the restart, otherwise `resume_interrupted` picks it up. Frontend `waitForBridge` covers the ~3-5 s restart.
 - `backend/demo_store/router.py` and `scripts/demo_bugs/router.py` must stay byte-identical (scenario state = equality). Any seed/behaviour change must be applied to both.
 - Demo tickets created by QA sweeps persist in `demo_tickets`; the seed is keyed on `id == LUM-T4821` so the integration test stays deterministic.
+- Kimi/Moonshot keys are platform-bound: this key works on `api.moonshot.ai` only (`.cn` → Invalid Authentication). Check `GET /v1/models` before choosing a model id; the playbook's `kimi-k2.5` is not on this account. `kimi-k2.7-code-highspeed` answers in ~1 s; `kimi-k3` ~7 s.

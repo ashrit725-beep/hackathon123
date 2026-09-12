@@ -1,10 +1,11 @@
-"""LLM client with provider fallback and strict JSON extraction."""
+"""LLM client with provider fallback (Claude → GPT → Kimi) and strict JSON extraction."""
 import json
 import re
 import time
 import uuid
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from openai import AsyncOpenAI
 
 from .config import settings
 from .db import llm_log, now_iso
@@ -16,12 +17,48 @@ class LLMUnavailable(Exception):
 
 def _providers() -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
-    for spec in (settings.primary_model, settings.fallback_model):
+    for spec in settings.model_chain:
         if spec and ":" in spec:
             provider, model = spec.split(":", 1)
             if settings.key_for(provider):
                 out.append((provider, model))
     return out
+
+
+def _llmchat_session(provider: str, model: str, system: str, max_tokens: int):
+    """Anthropic / OpenAI through emergentintegrations with the user's own provider key."""
+    chat = LlmChat(api_key=settings.key_for(provider), session_id=f"sqa-{uuid.uuid4()}", system_message=system)
+    params = {"max_tokens": max_tokens}
+    if not (provider == "openai" and model.startswith("gpt-5")):
+        params["temperature"] = 0.1  # gpt-5 family accepts only the default temperature
+    chat.with_model(provider, model).with_params(**params)
+
+    async def send(text: str) -> str:
+        return await chat.send_message(UserMessage(text=text))
+
+    return send
+
+
+def _kimi_session(model: str, system: str, max_tokens: int):
+    """Kimi (Moonshot) through its OpenAI-compatible endpoint; thinking models need headroom and no temperature override."""
+    client = AsyncOpenAI(api_key=settings.kimi_key, base_url=settings.kimi_base_url, timeout=180.0, max_retries=1)
+    messages: list[dict] = [{"role": "system", "content": system}]
+
+    async def send(text: str) -> str:
+        messages.append({"role": "user", "content": text})
+        res = await client.chat.completions.create(model=model, messages=messages, max_tokens=max(max_tokens, 16000))
+        msg = res.choices[0].message
+        content = msg.content or ""
+        reasoning = getattr(msg, "reasoning_content", None) or (msg.model_extra or {}).get("reasoning_content")
+        # K2.7-code preserves thinking across turns: echo reasoning_content back on the repair round.
+        messages.append({"role": "assistant", "content": content, **({"reasoning_content": reasoning} if reasoning else {})})
+        return content
+
+    return send
+
+
+def _session(provider: str, model: str, system: str, max_tokens: int):
+    return _kimi_session(model, system, max_tokens) if provider == "kimi" else _llmchat_session(provider, model, system, max_tokens)
 
 
 def _balanced_objects(text: str) -> list[str]:
@@ -88,18 +125,14 @@ async def complete_json(system: str, user: str, purpose: str, incident_id: str |
     for provider, model in _providers():
         started = time.time()
         try:
-            chat = LlmChat(api_key=settings.key_for(provider), session_id=f"sqa-{uuid.uuid4()}", system_message=system)
-            params = {"max_tokens": max_tokens}
-            if not (provider == "openai" and model.startswith("gpt-5")):
-                params["temperature"] = 0.1  # gpt-5 family accepts only the default temperature
-            chat.with_model(provider, model).with_params(**params)
-            text = await chat.send_message(UserMessage(text=user))
+            send = _session(provider, model, system, max_tokens)
+            text = await send(user)
             repaired = False
             try:
                 data = extract_json(text)
             except ValueError as parse_exc:
                 # One in-conversation repair round with the same provider before falling back to the next one.
-                text = await chat.send_message(UserMessage(text=REPAIR_NOTE.format(error=str(parse_exc)[:120])))
+                text = await send(REPAIR_NOTE.format(error=str(parse_exc)[:120]))
                 data = extract_json(text)
                 repaired = True
             meta = {"provider": provider, "model": model, "latency_ms": int((time.time() - started) * 1000),

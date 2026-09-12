@@ -111,7 +111,7 @@ function agent(data, inc) {
   if (!t) return empty("Loading telemetry…");
   const a = t.averages || {};
   const cur = inc?.telemetry || {};
-  return `<h3>Models</h3><p>primary <b class="mono">${esc(t.models?.primary)}</b> · fallback <b class="mono">${esc(t.models?.fallback)}</b></p>
+  return `<h3>Models</h3><p>primary <b class="mono">${esc(t.models?.primary)}</b> · fallback <b class="mono">${esc(t.models?.fallback)}</b>${t.models?.tertiary ? ` · last resort <b class="mono">${esc(t.models.tertiary)}</b>` : ""}</p>
     <h3>This incident</h3><div class="stats">${[["capture→bridge", cur.capture_to_bridge_ms], ["correlation", cur.correlation_ms], ["ai", cur.ai_ms], ["patch", cur.patch_ms], ["validation", cur.validation_ms], ["replay", cur.replay_ms], ["total", cur.total_ms]].map(([l, v]) => `<div class="stat"><div class="sv mono">${ms(v)}</div><div class="sl">${l}</div></div>`).join("")}</div>
     <h3>Averages · last ${(t.incidents || []).length} incidents</h3><div class="stats">${Object.entries(a).map(([k, v]) => `<div class="stat"><div class="sv mono">${ms(v)}</div><div class="sl">${esc(k.replace(/_ms$/, "").replace(/_/g, " "))}</div></div>`).join("")}<div class="stat"><div class="sv">${t.verified}</div><div class="sl">verified</div></div><div class="stat"><div class="sv">${t.rollbacks}</div><div class="sl">rollbacks</div></div></div>
     <h3>LLM calls</h3><table class="grid"><tbody>${(t.llm_calls || []).slice(0, 10).map((c) => `<tr><td class="mono">${esc(c.purpose)}</td><td class="mono">${esc(c.model)}</td><td class="mono ${c.ok ? "s-ok" : "s-bad"}">${c.ok ? ms(c.latency_ms) : esc((c.error || "").slice(0, 60))}</td></tr>`).join("")}</tbody></table>

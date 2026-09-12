@@ -33,7 +33,7 @@ scripts/reset_demo.sh       Restore the intentional bugs and clear ShadowQA memo
 
 ## Quick start
 
-1. `backend/.env` — set `ANTHROPIC_API_KEY` and/or `OPENAI_API_KEY` (primary `anthropic:claude-sonnet-4-6`, fallback `openai:gpt-5.4`), a `SHADOWQA_BRIDGE_TOKEN`, optionally `GITHUB_REPO=owner/repo` + `GITHUB_TOKEN` for real pull requests.
+1. `backend/.env` — set `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` and optionally `KIMI_API_KEY` (+ `KIMI_BASE_URL`, default `https://api.moonshot.ai/v1`). Provider chain: primary `anthropic:claude-sonnet-4-6` → fallback `openai:gpt-5.4` → last resort `kimi:kimi-k2.7-code-highspeed` (`SHADOWQA_PRIMARY_MODEL` / `SHADOWQA_FALLBACK_MODEL` / `SHADOWQA_TERTIARY_MODEL`), a `SHADOWQA_BRIDGE_TOKEN`, optionally `GITHUB_REPO=owner/repo` + `GITHUB_TOKEN` for real pull requests.
 2. `frontend/.env` — `REACT_APP_SHADOWQA_TOKEN` must equal the bridge token.
 3. Start backend (`uvicorn server:app --port 8001`) and frontend (`yarn start`). Open the app, sign in with `demo@lumen.supply / lumen-demo`.
 4. Break something (see `docs/DEMO.md`). ShadowQA takes it from there.

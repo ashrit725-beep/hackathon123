@@ -44,7 +44,7 @@ async def health(x_shadowqa_token: str | None = Header(default=None)):
     ws = get_workspace()
     git = await git_ops.status(ws)
     return {"ok": True, "workspace": ws.name, "root": str(ws.root), "write_roots": [ws.rel(p) for p in ws.write_roots],
-            "autonomy": settings.autonomy, "models": {"primary": settings.primary_model, "fallback": settings.fallback_model},
+            "autonomy": settings.autonomy, "models": settings.models,
             "git": git}
 
 
@@ -226,7 +226,7 @@ async def telemetry(x_shadowqa_token: str | None = Header(default=None)):
             "rollbacks": sum(1 for d in docs if (d.get("telemetry") or {}).get("rollback")),
             "verified": statuses.get("verified", 0) + statuses.get("committed", 0),
             "avg_signals": (sum(signal_counts) / len(signal_counts)) if signal_counts else None,
-            "llm_calls": llm_calls, "models": {"primary": settings.primary_model, "fallback": settings.fallback_model}}
+            "llm_calls": llm_calls, "models": settings.models}
 
 
 class SettingsUpdate(BaseModel):
@@ -236,7 +236,7 @@ class SettingsUpdate(BaseModel):
 @router.get("/settings")
 async def read_settings(x_shadowqa_token: str | None = Header(default=None)):
     require_token(x_shadowqa_token)
-    return {"autonomy": settings.autonomy, "policies": ["approve_all", "auto_low"], "models": {"primary": settings.primary_model, "fallback": settings.fallback_model}}
+    return {"autonomy": settings.autonomy, "policies": ["approve_all", "auto_low"], "models": settings.models}
 
 
 @router.put("/settings")

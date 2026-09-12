@@ -20,7 +20,7 @@ export function CenterHeader({ health, settings, onAutonomy, onRunQA, error }) {
         <div className="hidden md:flex items-center gap-4 text-[11.5px] font-mono text-[#98a3b3]">
           <span data-testid="cc-workspace">{health?.workspace || (error ? "bridge offline" : "connecting…")}</span>
           {git.branch && <span className="text-[#667081]">{git.branch} @ {git.head}{git.dirty_files?.length ? ` · ${git.dirty_files.length} dirty` : ""}</span>}
-          <span className="text-[#667081] truncate max-w-[260px]" title={settings?.models?.fallback}>{settings?.models?.primary || health?.models?.primary}</span>
+          <span className="text-[#667081] truncate max-w-[260px]" title={[settings?.models?.fallback, settings?.models?.tertiary].filter(Boolean).join(" → ")}>{settings?.models?.primary || health?.models?.primary}</span>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <div className="hidden sm:inline-flex rounded-md border border-white/[0.14] p-0.5 bg-[#12151a]" role="radiogroup" aria-label="Autonomy policy" data-testid="cc-autonomy">
